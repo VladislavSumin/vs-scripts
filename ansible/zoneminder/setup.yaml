@@ -1,0 +1,20 @@
+
+- name: Install Zoneminder
+  gather_facts: true
+  hosts: all
+  remote_user: root
+
+  tasks:
+    - name: Ping
+      ansible.builtin.ping:
+
+    - name: Install packages
+      ansible.builtin.apt:
+        pkg:
+          - nginx
+          - mariadb-server
+          - php-fpm
+          - php-mysql
+          - fcgiwrap
+        state: latest
+        update_cache: yes
