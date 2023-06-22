@@ -1,20 +1,104 @@
-
 - name: Install Zoneminder
   gather_facts: true
   hosts: all
   remote_user: root
+  vars:
+    php_version: 8.2
 
   tasks:
     - name: Ping
       ansible.builtin.ping:
 
-    - name: Install packages
+    - name: Set timezone to Europe/Moscow
+      community.general.timezone:
+        name: Europe/Moscow
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install nginx
       ansible.builtin.apt:
         pkg:
           - nginx
-          - mariadb-server
-          - php-fpm
-          - php-mysql
-          - fcgiwrap
         state: latest
-        update_cache: yes
+
+    - name: Install mariadb
+      ansible.builtin.apt:
+        pkg:
+          - mariadb-server
+        state: latest
+
+    - name: Install php
+      ansible.builtin.apt:
+        pkg:
+          - php{{ php_version }}-fpm
+          - php{{ php_version }}-mysql
+        state: latest
+
+    - name: Install other packages
+      ansible.builtin.apt:
+        pkg:
+          - fcgiwrap
+          - lsb-release
+          - gnupg2
+        state: latest
+
+    - name: Install zoneminder
+      ansible.builtin.apt:
+        pkg:
+          - zoneminder
+        state: latest
+
+    - name: Configure fpm
+      copy:
+        dest: "/etc/php/{{ php_version }}/fpm/php.ini"
+        content: |
+          cgi.fix_pathinfo=0
+
+    - name: Change the ZM_PATH_ZMS variable
+      ansible.builtin.replace:
+        path: /etc/zm/conf.d/01-system-paths.conf
+        regexp: '^ZM_PATH_ZMS=/zm/cgi-bin/zms$'
+        replace: 'ZM_PATH_ZMS=/cgi-bin/zms'
+
+#    - name: Drop zm db
+#      mysql_db:
+#        name: zm
+#        state: absent
+#        login_unix_socket: /run/mysqld/mysqld.sock
+
+    - name: Check zm db exists
+      mysql_db:
+        name: zm
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+      register: zm_database_exists
+
+    - name: Import zm db
+      mysql_db:
+        name: all
+        state: import
+        target: /usr/share/zoneminder/db/zm_create.sql
+        login_unix_socket: /run/mysqld/mysqld.sock
+      when: zm_database_exists.changed
+
+    - name: Create user zmuser with privilege for zm database
+      community.mysql.mysql_user:
+        name: zmuser
+        password: zmpass
+        priv: 'zm.*:ALL'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+#
+#    - name: Sets database root password
+#      mysql_user:
+#        login_password: ''
+#        login_user: 'root'
+#        user: root
+#        password: "test"
+#        host: localhost
+##      no_log: yes
+#          - python3-pymysql
+
