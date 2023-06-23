@@ -1,0 +1,37 @@
+- name: Mikrotik DNS sync
+  gather_facts: no
+  hosts: localhost
+  vars:
+    username: "admin"
+    hosts:
+      - "10.255.100.1"
+
+  vars_prompt:
+    - name: password
+      prompt: password
+      private: true
+
+  tasks:
+    - name: "Sync DNS records"
+      community.routeros.api_modify:
+        hostname: "{{ item }}"
+        password: "{{ password }}"
+        username: "{{ username }}"
+        handle_entries_content: remove
+        handle_absent_entries: remove
+        path: "ip dns static"
+        data:
+          # Regular hosts
+          - name: "pve1.vs"
+            address: "10.100.0.10"
+
+          - name: "ca.vs"
+            address: "10.100.0.11"
+
+          - name: "zoneminder.vs"
+            address: "10.100.0.12"
+
+          # Routers
+          - name: "sw1.rack.vs"
+            address: "10.255.100.1"
+      loop: "{{ hosts }}"
