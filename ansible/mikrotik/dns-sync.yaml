@@ -4,11 +4,11 @@
   vars:
     username: "admin"
     hosts:
-      - "10.255.100.1"
+      - "sw1.rack.vs"
+      - "sw1.dacha.vs"
 
   vars_prompt:
     - name: password
-      prompt: password
       private: true
 
   tasks:
@@ -34,4 +34,6 @@
           # Routers
           - name: "sw1.rack.vs"
             address: "10.255.100.1"
+          - name: "sw1.dacha.vs"
+            address: "10.255.1.1"
       loop: "{{ hosts }}"
