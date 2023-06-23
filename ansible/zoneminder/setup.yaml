@@ -91,6 +91,19 @@
         state: present
         login_unix_socket: /run/mysqld/mysqld.sock
 
+    - name: Change /etc/zm/zm.conf file permissions
+      ansible.builtin.file:
+        path: /etc/zm/zm.conf
+        owner: root
+        group: www-data
+        mode: '640'
+
+    - name: Start zoneminder and add it to start on boot
+      ansible.builtin.systemd:
+        name: zoneminder
+        state: started
+        enabled: true
+
 #
 #    - name: Sets database root password
 #      mysql_user:
