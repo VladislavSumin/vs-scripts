@@ -4,16 +4,19 @@
   vars:
     username: "admin"
     hosts:
-      - "sw1.dacha.vs"
+      - host: "sw1.dacha.vs"
+#        role: "network_kernel"
+#        network_number: "1"
 
   vars_prompt:
     - name: password
       private: true
 
   tasks:
+    # Default settings for all
     - name: "Disable IPv6"
       community.routeros.api_modify:
-        hostname: "{{ item }}"
+        hostname: "{{ item.host }}"
         password: "{{ password }}"
         username: "{{ username }}"
         path: "ipv6 settings"
@@ -23,7 +26,7 @@
 
     - name: "Enable dns server handle external requests"
       community.routeros.api_modify:
-        hostname: "{{ item }}"
+        hostname: "{{ item.host }}"
         password: "{{ password }}"
         username: "{{ username }}"
         path: "ip dns"
@@ -33,10 +36,22 @@
 
     - name: "Set time-zone-name to Europe/Moscow"
       community.routeros.api_modify:
-        hostname: "{{ item }}"
+        hostname: "{{ item.host }}"
         password: "{{ password }}"
         username: "{{ username }}"
         path: "system clock"
         data:
           - time-zone-name: "Europe/Moscow"
       loop: "{{ hosts }}"
+
+    - name: "Create management-bridge"
+      community.routeros.api_modify:
+        hostname: "{{ item.host }}"
+        password: "{{ password }}"
+        username: "{{ username }}"
+        path: "interface bridge"
+        data:
+          - name: "management-bridge"
+      loop: "{{ hosts }}"
+
+    # Settings for network_kernel
