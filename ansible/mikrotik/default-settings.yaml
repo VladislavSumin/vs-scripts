@@ -5,8 +5,8 @@
     username: "admin"
     hosts:
       - host: "sw1.dacha.vs"
-#        role: "network_kernel"
-#        network_number: "1"
+        network_id: "1"
+        self_id: "1"
 
   vars_prompt:
     - name: password
@@ -54,4 +54,14 @@
           - name: "management-bridge"
       loop: "{{ hosts }}"
 
-    # Settings for network_kernel
+    - name: "Set address for management-bridge"
+      community.routeros.api_modify:
+        hostname: "{{ item.host }}"
+        password: "{{ password }}"
+        username: "{{ username }}"
+        path: "ip address"
+        data:
+          - address: "10.{{ item.network_id }}.255.{{ item.self_id }}/24"
+            network: "10.{{ item.network_id }}.255.0"
+            interface: "management-bridge"
+      loop: "{{ hosts }}"
