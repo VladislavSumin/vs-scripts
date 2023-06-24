@@ -20,3 +20,23 @@
         data:
           - disable-ipv6: yes
       loop: "{{ hosts }}"
+
+    - name: "Enable dns server handle external requests"
+      community.routeros.api_modify:
+        hostname: "{{ item }}"
+        password: "{{ password }}"
+        username: "{{ username }}"
+        path: "ip dns"
+        data:
+          - allow-remote-requests: yes
+      loop: "{{ hosts }}"
+
+    - name: "Set time-zone-name to Europe/Moscow"
+      community.routeros.api_modify:
+        hostname: "{{ item }}"
+        password: "{{ password }}"
+        username: "{{ username }}"
+        path: "system clock"
+        data:
+          - time-zone-name: "Europe/Moscow"
+      loop: "{{ hosts }}"
