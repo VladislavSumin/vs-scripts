@@ -7,6 +7,12 @@
       - host: "sw1.dacha.vs"
         network_id: "1"
         self_id: "1"
+        subnets:
+          - name: "management"
+          - name: "LAN"
+          - name: "WAN"
+          - name: "guest"
+          - name: "marina"
 
   vars_prompt:
     - name: password
@@ -44,24 +50,26 @@
           - time-zone-name: "Europe/Moscow"
       loop: "{{ hosts }}"
 
-    - name: "Create management-bridge"
+    - name: "Create net bridges"
       community.routeros.api_modify:
-        hostname: "{{ item.host }}"
+        hostname: "{{ item.0.host }}"
         password: "{{ password }}"
         username: "{{ username }}"
         path: "interface bridge"
         data:
-          - name: "management-bridge"
-      loop: "{{ hosts }}"
+          - name: "{{ item.1.name }}-bridge"
+      with_subelements:
+        - "{{ hosts }}"
+        - "subnets"
 
-    - name: "Set address for management-bridge"
-      community.routeros.api_modify:
-        hostname: "{{ item.host }}"
-        password: "{{ password }}"
-        username: "{{ username }}"
-        path: "ip address"
-        data:
-          - address: "10.{{ item.network_id }}.255.{{ item.self_id }}/24"
-            network: "10.{{ item.network_id }}.255.0"
-            interface: "management-bridge"
-      loop: "{{ hosts }}"
+#    - name: "Set address for management-bridge"
+#      community.routeros.api_modify:
+#        hostname: "{{ item.host }}"
+#        password: "{{ password }}"
+#        username: "{{ username }}"
+#        path: "ip address"
+#        data:
+#          - address: "10.{{ item.network_id }}.255.{{ item.self_id }}/24"
+#            network: "10.{{ item.network_id }}.255.0"
+#            interface: "management-bridge"
+#      loop: "{{ hosts }}"
