@@ -31,9 +31,25 @@
           - name: "zoneminder.vs"
             address: "10.100.0.12"
 
+          # Test hosts
+          - name: "pve1.test.vs"
+            address: "10.100.1.10"
+
+          - name: "ca.test.vs"
+            address: "10.100.1.11"
+
+          - name: "zoneminder.test.vs"
+            address: "10.100.1.15"
+
           # Routers
           - name: "sw1.rack.vs"
             address: "10.255.100.1"
+
           - name: "sw1.dacha.vs"
             address: "10.255.1.1"
+
+          # TODO fix network configuration for that
+          # setup management vlan
+          - name: "sw2.dacha.vs"
+            address: "10.255.1.3"
       loop: "{{ hosts }}"
