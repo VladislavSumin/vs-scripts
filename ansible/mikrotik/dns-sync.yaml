@@ -6,6 +6,7 @@
     hosts:
       - "sw1.rack.vs"
       - "sw1.dacha.vs"
+      - "sw2.dacha.vs"
 
   vars_prompt:
     - name: password
@@ -43,13 +44,11 @@
 
           # Routers
           - name: "sw1.rack.vs"
-            address: "10.255.100.1"
+            address: "10.100.255.1"
 
           - name: "sw1.dacha.vs"
-            address: "10.255.1.1"
+            address: "10.1.255.1"
 
-          # TODO fix network configuration for that
-          # setup management vlan
           - name: "sw2.dacha.vs"
-            address: "10.255.1.3"
+            address: "10.1.255.2"
       loop: "{{ hosts }}"
