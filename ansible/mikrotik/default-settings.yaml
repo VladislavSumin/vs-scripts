@@ -1,0 +1,22 @@
+- name: Mikrotik DNS sync
+  gather_facts: no
+  hosts: localhost
+  vars:
+    username: "admin"
+    hosts:
+      - "sw1.dacha.vs"
+
+  vars_prompt:
+    - name: password
+      private: true
+
+  tasks:
+    - name: "Disable IPv6"
+      community.routeros.api_modify:
+        hostname: "{{ item }}"
+        password: "{{ password }}"
+        username: "{{ username }}"
+        path: "ipv6 settings"
+        data:
+          - disable-ipv6: yes
+      loop: "{{ hosts }}"
