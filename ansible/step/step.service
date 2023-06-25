@@ -1,0 +1,14 @@
+[Unit]
+Description=step-ca
+After=syslog.target network.target
+
+[Service]
+User=root
+Group=root
+ExecStart=/bin/sh -c '/bin/step-ca /root/.step/config/ca.json --password-file=/root/ca_root_key_password >> /var/log/step-ca/output.log 2>&1'
+Type=simple
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

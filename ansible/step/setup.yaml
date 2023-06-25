@@ -1,0 +1,114 @@
+- name: Install Step CA
+  gather_facts: true
+  hosts: all
+  remote_user: root
+  vars:
+    step_cli_version: 0.24.4
+    step_ca_version: 0.24.2
+
+    ca_name: "demo_ca"
+    ca_dns: "demo-ca.vs"
+
+    # in hour 168h = 7d, 26280h = 3y
+    acme_cert_dur: 168
+    manual_cert_default_dur: 26280
+    manual_cert_max_dur: 26280
+
+  tasks:
+    - name: Ping
+      ansible.builtin.ping:
+
+    - name: Set timezone to Europe/Moscow
+      community.general.timezone:
+        name: Europe/Moscow
+
+    - name: Download step cli
+      ansible.builtin.get_url:
+        url: https://dl.smallstep.com/gh-release/cli/docs-ca-install/v{{ step_cli_version }}/step-cli_{{ step_cli_version }}_amd64.deb
+        dest: /root/step-cli_{{ step_cli_version }}_amd64.deb
+
+    - name: Install step cli
+      ansible.builtin.apt:
+        deb: /root/step-cli_{{ step_cli_version }}_amd64.deb
+
+
+    - name: Download step ca
+      ansible.builtin.get_url:
+        url: https://dl.smallstep.com/gh-release/certificates/docs-ca-install/v{{ step_ca_version }}/step-ca_{{ step_ca_version }}_amd64.deb
+        dest: /root/step-ca_{{ step_ca_version }}_amd64.deb
+
+    - name: Install step ca
+      ansible.builtin.apt:
+        deb: /root/step-ca_{{ step_ca_version }}_amd64.deb
+
+    - name: Create ca key password
+      copy:
+        force: no
+        dest: "/root/ca_root_key_password"
+        content: "{{ lookup('ansible.builtin.password', '/dev/null') }}"
+      no_log: yes
+
+    - name: Create provisioner key password
+      copy:
+        force: no
+        dest: "/root/ca_provisioner_key_password"
+        content: "{{ lookup('ansible.builtin.password', '/dev/null') }}"
+      no_log: yes
+
+    - name: Check is ca already initialized
+      stat:
+        path: "/root/.step/config/ca.json"
+      register: step_ca_config
+
+    - name: Init ca
+      command: >-
+        step ca init
+        --deployment-type=standalone
+        --ssh
+        --acme
+        --remote-management
+        --name={{ ca_name }}
+        --dns={{ ca_dns }}
+        --address=:443
+        --provisioner=step
+        --password-file=/root/ca_root_key_password
+        --provisioner-password-file=/root/ca_provisioner_key_password
+      when: not step_ca_config.stat.exists
+
+    - name: Add CA cert to trusted by system
+      block:
+        - name: Copy CA cert
+          copy:
+            remote_src: true
+            dest: /usr/local/share/ca-certificates/{{ ca_name }}.crt
+            src: /root/.step/certs/root_ca.crt
+          register: copy_ca_cert
+        - name: Update trusted certs
+          command: update-ca-certificates
+          when: copy_ca_cert.changed
+
+    - name: Create directory for step logs
+      ansible.builtin.file:
+        path: /var/log/step-ca
+        state: directory
+
+    - name: Copy step service to systemd services
+      copy:
+        src: step.service
+        dest: /etc/systemd/system
+
+    - name: Enable and start step service
+      ansible.builtin.systemd:
+        name: step.service
+        state: started
+        enabled: true
+        daemon_reload: true
+
+    - name: Setup ACME cert duration
+      command: >-
+        step ca provisioner update acme
+        --x509-default-dur={{ acme_cert_dur }}h
+        --admin-subject=step 
+        --admin-provisioner=step 
+        --password-file=/root/ca_provisioner_key_password
+      when: not step_ca_config.stat.exists
