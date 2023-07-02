@@ -9,10 +9,17 @@
     ca_name: "demo_ca"
     ca_dns: "demo-ca.vs"
 
+    personal_provisioner_username: "sumin"
+
     # in hour 168h = 7d, 26280h = 3y
     acme_cert_dur: 168
     manual_cert_default_dur: 26280
     manual_cert_max_dur: 26280
+
+  vars_prompt:
+    - name: password
+      private: true
+      confirm: true
 
   tasks:
     - name: Ping
@@ -41,14 +48,14 @@
       ansible.builtin.apt:
         deb: /root/step-ca_{{ step_ca_version }}_amd64.deb
 
-    - name: Create ca key password
+    - name: Create ca key password file
       copy:
         force: no
         dest: "/root/ca_root_key_password"
         content: "{{ lookup('ansible.builtin.password', '/dev/null') }}"
       no_log: yes
 
-    - name: Create provisioner key password
+    - name: Create provisioner key password file
       copy:
         force: no
         dest: "/root/ca_provisioner_key_password"
@@ -112,3 +119,28 @@
         --admin-provisioner=step 
         --password-file=/root/ca_provisioner_key_password
       when: not step_ca_config.stat.exists
+
+    - name: Create personal provisioner for remote cert sing
+      block:
+        - name: Create password file
+          copy:
+            force: no
+            dest: "/root/ca_user_key_password"
+            content: "{{ password }}"
+          no_log: yes
+        - name: Create user
+          command: >-
+            step ca provisioner add {{ personal_provisioner_username }} --create
+            --admin-subject=step 
+            --admin-provisioner=step 
+            --password-file=/root/ca_user_key_password
+            --admin-password-file=/root/ca_provisioner_key_password
+            --x509-default-dur={{ manual_cert_default_dur }}h
+            --x509-max-dur={{ manual_cert_max_dur }}h
+      always:
+        - name: Delete password file
+          ansible.builtin.file:
+            path: "/root/ca_user_key_password"
+            state: absent
+      when: not step_ca_config.stat.exists
+
