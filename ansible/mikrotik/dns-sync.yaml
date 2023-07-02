@@ -26,6 +26,9 @@
           - name: "pve1.vs"
             address: "10.100.0.10"
 
+          - name: "pve2.vs"
+            address: "10.100.0.20"
+
           - name: "ca.vs"
             address: "10.100.0.21"
 
