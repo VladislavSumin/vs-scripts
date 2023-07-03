@@ -6,8 +6,8 @@
     step_cli_version: 0.24.4
     step_ca_version: 0.24.2
 
-    ca_name: "demo_ca"
-    ca_dns: "demo-ca.vs"
+    ca_name: "vs-ca"
+    ca_dns: "ca.vs,ca.vladislavsumin.ru"
 
     personal_provisioner_username: "sumin"
 
