@@ -35,6 +35,9 @@
           - name: "zoneminder.vs"
             address: "10.100.0.12"
 
+          - name: "ha.dacha.vs"
+            address: "10.100.0.22"
+
           # Test hosts
           - name: "pve1.test.vs"
             address: "10.100.1.10"
